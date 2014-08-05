@@ -1,53 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <!--
-    (c) Copyright 2013 WibiData, Inc.
+  (c) Copyright 2013 WibiData, Inc.
 
-    See the NOTICE file distributed with this work for additional
-    information regarding copyright ownership.
+  See the NOTICE file distributed with this work for additional
+  information regarding copyright ownership.
 
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
 
-        http://www.apache.org/licenses/LICENSE-2.0
+  http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
   -->
   <modelVersion>4.0.0</modelVersion>
-
   <groupId>org.kiji.rest</groupId>
   <artifactId>kiji-rest-root</artifactId>
   <version>1.5.0-SNAPSHOT</version>
   <packaging>pom</packaging>
-
   <parent>
     <groupId>org.kiji.pom</groupId>
     <artifactId>root-pom</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.1-SNAPSHOT</version>
   </parent>
-
   <name>The Kiji REST Servlet top-level project</name>
   <description>The Kiji REST Servlet</description>
   <inceptionYear>2013</inceptionYear>
-
   <properties>
     <!-- use UTF-8 for everything -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
     <kiji-schema.version>1.6.0-SNAPSHOT</kiji-schema.version>
     <kiji-scoring.version>0.17.0-SNAPSHOT</kiji-scoring.version>
     <kiji-mapreduce.version>1.3.0-SNAPSHOT</kiji-mapreduce.version>
     <fake-hbase.version>0.2.0-SNAPSHOT</fake-hbase.version>
-    <dropwizard.version>0.6.2</dropwizard.version>
-    <guava.version>14.0.1</guava.version>
+    <dropwizard.version>[0.6.2]</dropwizard.version>
+    <cdh5-hadoop.version>2.3.0-cdh5.0.3</cdh5-hadoop.version>
+    <hbase-cdh5.version>0.96.1.1-cdh5.0.3</hbase-cdh5.version>
   </properties>
-
   <modules>
     <module>build-resources</module>
     <module>kiji-rest</module>
@@ -57,46 +52,263 @@
     <module>cdh4</module>
     <module>cdh5</module>
   </modules>
-
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>${slf4j-api.version}</version>
+        <scope>compile</scope>
+      </dependency>
+      <!-- Hadoop/HBase dependencies are provided here only to ensure that the tests
+      pass. There are submodules (e.g. cdh4/ cdh5/) that handle including the actual
+      dependencies in the right scope for packaging. -->
+      <dependency>
+        <groupId>org.apache.hadoop</groupId>
+        <artifactId>hadoop-client</artifactId>
+        <version>${cdh5-hadoop.version}</version>
+        <scope>provided</scope>
+        <exclusions>
+          <!-- Dropwizard works with the internals of logback which conflict
+          with these excluded packages -->
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>javax.servlet.jsp</groupId>
+            <artifactId>jsp-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-core</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-json</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-server</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hadoop</groupId>
+        <artifactId>hadoop-core</artifactId>
+        <version>${hadoop.version}</version>
+        <scope>provided</scope>
+        <exclusions>
+          <!-- Dropwizard works with the internals of logback which conflict
+          with these excluded packages -->
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>log4j-over-slf4j</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+          </exclusion>
+          <!--  These conflict with the servlet package in DropWizard -->
+          <exclusion>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>javax.servlet.jsp</groupId>
+            <artifactId>jsp-api</artifactId>
+          </exclusion>
+          <!-- These were for some reason forcing out the newer org.codehaus.jackson which
+          is needed for JSON serialization in kiji-schema -->
+          <exclusion>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-mapper-asl</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-core-asl</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-core</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-json</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-server</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hadoop</groupId>
+        <artifactId>hadoop-common</artifactId>
+        <version>${cdh5-hadoop.version}</version>
+        <scope>provided</scope>
+        <exclusions>
+          <!-- Dropwizard works with the internals of logback which conflict
+          with these excluded packages -->
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>log4j-over-slf4j</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+          </exclusion>
+          <!--  These conflict with the servlet package in DropWizard -->
+          <exclusion>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>javax.servlet.jsp</groupId>
+            <artifactId>jsp-api</artifactId>
+          </exclusion>
+          <!-- These were for some reason forcing out the newer org.codehaus.jackson which
+          is needed for JSON serialization in kiji-schema -->
+          <exclusion>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-mapper-asl</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-core-asl</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-core</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-json</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-server</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hbase</groupId>
+        <artifactId>hbase-client</artifactId>
+        <version>${hbase-cdh5.version}</version>
+        <scope>provided</scope>
+        <exclusions>
+          <!-- Dropwizard works with the internals of logback which conflict
+          with these excluded packages -->
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>log4j-over-slf4j</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+          </exclusion>
+          <!-- Just to save some space in the final package -->
+          <exclusion>
+            <groupId>org.jruby</groupId>
+            <artifactId>jruby-complete</artifactId>
+          </exclusion>
+          <!--  These conflict with the servlet package in DropWizard -->
+          <exclusion>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>javax.servlet.jsp</groupId>
+            <artifactId>jsp-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <artifactId>servlet-api-2.5</artifactId>
+            <groupId>org.mortbay.jetty</groupId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-core</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-json</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-server</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hbase</groupId>
+        <artifactId>hbase-common</artifactId>
+        <version>${hbase-cdh5.version}</version>
+        <scope>provided</scope>
+        <exclusions>
+          <!-- Dropwizard works with the internals of logback which conflict
+          with these excluded packages -->
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>log4j-over-slf4j</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+          </exclusion>
+          <!-- Just to save some space in the final package -->
+          <exclusion>
+            <groupId>org.jruby</groupId>
+            <artifactId>jruby-complete</artifactId>
+          </exclusion>
+          <!--  These conflict with the servlet package in DropWizard -->
+          <exclusion>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>javax.servlet.jsp</groupId>
+            <artifactId>jsp-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <artifactId>servlet-api-2.5</artifactId>
+            <groupId>org.mortbay.jetty</groupId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-core</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-json</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-server</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
   <build>
     <plugins>
       <plugin>
-        <!--
-            REST is built depending on the oldest version of KijiSchema that supports it.
-            To test whether the latest Kiji dependency SNAPSHOTs have introduced a regression:
-
-            Run the following commands in your shell
-
-            mvn versions:update-properties -N # Update the kiji-*.version properties
-                                              # in the top-level pom file; don't recurse.
-            mvn clean verify                  # Uses the new snapshot versions
-            mvn versions:revert               # Revert the pom file to before update-properties.
-                                    # Do not check in new Kiji SNAPSHOT dependencies in the pom.
-        -->
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
-        <configuration>
-          <includeProperties>kiji-schema.version</includeProperties>
-        </configuration>
-        <dependencies>
-          <dependency>
-            <groupId>org.kiji.schema</groupId>
-            <artifactId>kiji-schema</artifactId>
-            <version>${kiji-schema.version}</version>
-          </dependency>
-        </dependencies>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
       </plugin>
     </plugins>
-
     <pluginManagement>
       <plugins>
         <plugin>
           <!-- must supply build-resources module with checkstyle/checkstyle.xml
-            and suppressions.xml to use this -->
+          and suppressions.xml to use this -->
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-checkstyle-plugin</artifactId>
           <dependencies>
@@ -107,10 +319,9 @@
             </dependency>
           </dependencies>
         </plugin>
-
         <plugin>
           <!-- must supply build-resources module with findbugs/includeFilter.xml
-            and excludeFilter.xml to use this -->
+          and excludeFilter.xml to use this -->
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>findbugs-maven-plugin</artifactId>
           <dependencies>
@@ -121,7 +332,6 @@
             </dependency>
           </dependencies>
         </plugin>
-
         <plugin>
           <groupId>org.apache.avro</groupId>
           <artifactId>avro-maven-plugin</artifactId>
@@ -145,7 +355,6 @@
       </plugins>
     </pluginManagement>
   </build>
-
   <repositories>
     <repository>
       <id>kiji-repos</id>
@@ -158,7 +367,6 @@
       <url>https://repo.wibidata.com/artifactory/kiji-nightly</url>
     </repository>
   </repositories>
-
   <scm>
     <connection>scm:git:git@github.com:kijiproject/kiji-rest.git</connection>
     <url>scm:git:git@github.com:kijiproject/kiji-rest.git</url>
